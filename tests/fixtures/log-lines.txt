@@ -1,0 +1,18 @@
+# Lines that MUST be recognised as game-log lines.
+# One per row, exactly as they appear in the RiftAtlas log panel.
+22:38 Moved Recruit from Veiled Temple to trash.
+22:46 Played Scuttle Crab from hand to base.
+22:46 Drew 1 card.
+22:46 Drew 1 card.×2
+22:47 Drew 1 card.×3
+22:31 Lock in a battlefield.
+22:31 Locked in a battlefield.
+22:52 Rewound to before their last action.
+9:05 Drew 1 card.
+09:05 Drew 1 card.
+0:00 Game started.
+22:38:07 Moved Recruit from Veiled Temple to trash.
+10:38 PM Moved Recruit from Veiled Temple to trash.
+10:38PM Moved Recruit from Veiled Temple to trash.
+9:05 am Drew 1 card.×2
+9:05:12 PM Played Scuttle Crab from hand to base.

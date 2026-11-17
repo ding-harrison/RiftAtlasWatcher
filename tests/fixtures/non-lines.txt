@@ -1,0 +1,20 @@
+# Text that must NOT be recognised as a game-log line.
+Game 3
+Game 1
+Game Log
+Best of 3
+Turn 4
+Export
+Settings
+22:38
+10:38 PM
+Drew 1 card.
+Rewound to before their last action.
+Played Scuttle Crab from hand to base.
+Score 2 - 1
+Round 2 starts at 22:38
+You: 22:38 nice play
+3 cards in hand
+122:38 Not a clock time
+22:3 Too few minute digits
+22:38Moved with no space after the time
