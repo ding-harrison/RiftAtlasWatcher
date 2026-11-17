@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "RiftAtlas Full Log Keeper",
+  "short_name": "Log Keeper",
+  "version": "1.0.0",
+  "description": "Keeps every game-log line from play.riftatlas.com, with one-click export and match recording. Everything stays on your computer.",
+  "minimum_chrome_version": "116",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo8JiXtGDPdKi8x5isfzPwJRhRWw+rodseiAH8KdVI9Y4geu3uSqw9IXMgCirscJKc4Z+t95aHUwhExHxQ6Eo71EThuuViWSyepwI8lOztQ0O42Rm0PgAVzGc8kWvS21uEJkVPPM25o1SA8lnt65lORGbF6SdsiY4qeeLz7qJOhLHfY46ZnAoyT5F8V4yoB/dLtOhFrG978LT4Ib/sRAf0LCF44R8oSi8w9I92kG4csgmKHW0lIGKmIX5c487uUsAaK+X1wXQdos5WmVKkJ7w5W811SD7s6YIKdZ+WTENga59ynJhlSYVxrUl6GyJt1qPLtSrbIjfHy5zDPv3PGNU5QIDAQAB",
+  "permissions": ["storage", "unlimitedStorage", "tabCapture", "offscreen", "downloads"],
+  "host_permissions": ["https://play.riftatlas.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://play.riftatlas.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "RiftAtlas Full Log Keeper",
+    "default_popup": "popup.html"
+  },
+  "commands": {
+    "toggle-recording": {
+      "suggested_key": {
+        "default": "Alt+Shift+R"
+      },
+      "description": "Start / stop recording the RiftAtlas tab"
+    }
+  }
+}

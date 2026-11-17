@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>RiftAtlas Full Log Keeper</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --panel: #f3f4f6;
+        --text: #1f2328;
+        --muted: #636c76;
+        --border: #d8dee4;
+        --accent: #2f6feb;
+        --danger: #d93025;
+        --warn: #b25e00;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1c1f24;
+          --panel: #272b33;
+          --text: #e6e8eb;
+          --muted: #9aa3ad;
+          --border: #3a404a;
+          --accent: #6ea2ff;
+          --danger: #ff6b5e;
+          --warn: #f0a23b;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        width: 380px;
+        background: var(--bg);
+        color: var(--text);
+        font: 13px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      header,
+      section,
+      footer {
+        padding: 12px 14px;
+      }
+      header {
+        border-bottom: 1px solid var(--border);
+      }
+      h1 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 650;
+      }
+      h2 {
+        margin: 0 0 8px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      button {
+        font: inherit;
+        font-size: 12px;
+        padding: 4px 9px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) {
+        border-color: var(--accent);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        padding: 6px 12px;
+      }
+      button.stop {
+        background: var(--danger);
+        border-color: var(--danger);
+        color: #fff;
+        font-weight: 600;
+        padding: 6px 12px;
+      }
+      button.danger {
+        color: var(--danger);
+      }
+
+      #recording {
+        border-bottom: 1px solid var(--border);
+      }
+      .rec-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .rec-status {
+        flex: 1;
+        min-width: 0;
+      }
+      .dot {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--muted);
+        margin-right: 6px;
+      }
+      .dot.on {
+        background: var(--danger);
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        50% {
+          opacity: 0.35;
+        }
+      }
+      #rec-error {
+        margin-top: 8px;
+        color: var(--danger);
+        font-size: 12px;
+      }
+      label.toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        cursor: pointer;
+      }
+      label.toggle input {
+        margin: 0;
+      }
+
+      #sessions {
+        max-height: 330px;
+        overflow-y: auto;
+        padding-bottom: 4px;
+      }
+      .session {
+        background: var(--panel);
+        border-radius: 8px;
+        padding: 9px 10px;
+        margin-bottom: 8px;
+      }
+      .session-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-weight: 600;
+      }
+      .session-count {
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .session-url {
+        color: var(--muted);
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .session-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 7px;
+      }
+      .session-actions .danger {
+        margin-left: auto;
+      }
+      .empty {
+        color: var(--muted);
+        padding: 6px 0 10px;
+      }
+      .empty strong {
+        color: var(--text);
+      }
+      footer {
+        display: flex;
+        gap: 8px;
+        border-top: 1px solid var(--border);
+      }
+      footer .danger {
+        margin-left: auto;
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>RiftAtlas Full Log Keeper</h1>
+      <div class="sub">Everything stays on this computer.</div>
+    </header>
+
+    <section id="recording">
+      <h2>Match recording</h2>
+      <div class="rec-row">
+        <div class="rec-status">
+          <span class="dot" id="rec-dot"></span><span id="rec-text">Not recording</span>
+          <div class="sub" id="rec-hint"></div>
+        </div>
+        <button id="rec-button" class="primary">Start recording</button>
+      </div>
+      <div id="rec-error" hidden></div>
+      <label class="toggle">
+        <input type="checkbox" id="nag-toggle" />
+        <span>Remind me with a <strong>REC?</strong> badge when a match isn't being recorded</span>
+      </label>
+    </section>
+
+    <section>
+      <h2>Captured logs</h2>
+      <div id="sessions"></div>
+      <div id="empty" class="empty" hidden>
+        <strong>No logs yet.</strong> Capture is automatic: open
+        <strong>play.riftatlas.com</strong>, play a match, and every log line is kept here — even
+        after the game's own log has scrolled it away.
+      </div>
+    </section>
+
+    <footer id="footer" hidden>
+      <button id="export-all">Export all (.txt)</button>
+      <button id="delete-all" class="danger">Delete all</button>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
