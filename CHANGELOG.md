@@ -1,0 +1,33 @@
+# Changelog
+
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
+[Semantic Versioning](https://semver.org/).
+
+## [1.0.0] - 2026-11-17
+
+First repository release, replacing the v0.1 prototype.
+
+### Added
+
+- **Log capture** on `https://play.riftatlas.com/*`: starts automatically on
+  every page load, sweeps lines already on screen, then records each new line
+  the moment it renders — so the page's rolling buffer can no longer lose it.
+- In-place amendments (`Drew 1 card.` → `Drew 1 card.×2` → `×3`) update the
+  stored line instead of duplicating it; recycled DOM nodes append a new line;
+  identical lines from different nodes are both kept.
+- Optional `logContainerSelector` scoping with automatic fallback to the whole
+  page when the selector matches nothing.
+- Persistence to `chrome.storage.local`, debounced and flushed when the tab is
+  hidden or closed. One page load is one session.
+- **Popup**: sessions newest-first with per-session `.txt` / `.json` export and
+  delete, plus "Export all (.txt)" and "Delete all".
+- **Match recording**: one click (or `Alt+Shift+R`) records the tab's video and
+  audio to a local `.webm`, keeps the game audible while recording, and saves
+  cleanly if the tab is closed mid-match.
+- **Badge**: live per-tab entry count, and a `REC?` reminder while a match is
+  being logged but not recorded (can be switched off in the popup).
+- Unit tests for line detection and export formats, and a GitHub Actions
+  workflow that publishes a ready-to-load zip on every version tag.
+
+[1.0.0]: https://github.com/ding-harrison/RiftAtlasWatcher/releases/tag/v1.0.0

@@ -1,0 +1,61 @@
+# Builds riftatlas-log-keeper.zip and attaches it to a GitHub Release.
+#
+# To publish a new version:
+#   1. Bump "version" in manifest.json and add a CHANGELOG.md entry.
+#   2. Push a matching tag:  git tag v1.0.1 && git push origin v1.0.1
+#      (or create the release + tag from the GitHub "Releases" page).
+name: Package
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Unit tests
+        run: node --test tests/unit.test.js
+
+      - name: Tag must match manifest version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version="$(node -p "require('./manifest.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match manifest.json version $version"
+            exit 1
+          fi
+
+      - name: Zip the extension
+        run: |
+          mkdir -p dist/riftatlas-log-keeper
+          cp manifest.json content.js background.js offscreen.html offscreen.js \
+             popup.html popup.js README.md LICENSE CHANGELOG.md dist/riftatlas-log-keeper/
+          cd dist && zip -r riftatlas-log-keeper.zip riftatlas-log-keeper
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: riftatlas-log-keeper
+          path: dist/riftatlas-log-keeper.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/riftatlas-log-keeper.zip --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/riftatlas-log-keeper.zip \
+              --title "RiftAtlas Full Log Keeper $GITHUB_REF_NAME" --generate-notes
+          fi
