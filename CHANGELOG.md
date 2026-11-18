@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-11-18
+
+### Fixed
+
+- **Nothing was captured on the real site.** RiftAtlas renders a row's time and text
+  as separate elements spaced with CSS, so a row read `22:38Moved…` and never matched
+  the line pattern. Capture now reads RiftAtlas's own log rows
+  (`[data-match-log-group] li`) and restores the space.
+- Rows that RiftAtlas draws again — when you scroll its log, when a repeat counter
+  changes, or after a resync — are recognised instead of being saved twice. The log
+  on screen is merged into the saved history by sequence alignment.
+- Lines already on screen at page load are saved oldest-first (RiftAtlas lists the
+  newest line first).
+
+### Changed
+
+- New `rowSelector` and `newestFirst` settings in `CONFIG`. The previous
+  whole-page detection remains as an automatic fallback when the row selector
+  matches nothing.
+
 ## [1.0.0] - 2026-11-17
 
 First repository release, replacing the v0.1 prototype.
@@ -30,4 +50,5 @@ First repository release, replacing the v0.1 prototype.
 - Unit tests for line detection and export formats, and a GitHub Actions
   workflow that publishes a ready-to-load zip on every version tag.
 
+[1.0.1]: https://github.com/ding-harrison/RiftAtlasWatcher/releases/tag/v1.0.1
 [1.0.0]: https://github.com/ding-harrison/RiftAtlasWatcher/releases/tag/v1.0.0

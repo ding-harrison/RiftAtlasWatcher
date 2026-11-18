@@ -76,12 +76,13 @@ room stays together — just like RiftAtlas's own log.
 | **Export all (.txt)** | Every session, oldest first, separated by `==== Session started <time> ====`. |
 | **Delete / Delete all** | Removes saved sessions. "Delete all" asks first.                           |
 
-The log is kept verbatim. Both players' event streams, in-place repeat counters
-(`Drew 1 card.×2`) and rewinds are all preserved as RiftAtlas showed them; nothing is
-"cleaned up" or de-duplicated.
+The log is kept as RiftAtlas showed it: both players' lines, repeat counters
+(`Drew 1 card.×2`) and rewinds. A line that a rewind removes from the in-game log stays in
+your export, followed by the rewind line.
 
-**Keep the log panel open while you play.** The extension can only save lines that RiftAtlas
-actually renders.
+**Joined late or refreshed mid-match?** RiftAtlas only draws its newest ~16 log lines until
+you scroll. Scroll the in-game log down to its oldest line once and the extension picks up
+everything RiftAtlas still has.
 
 ### Recording a match
 
@@ -113,37 +114,38 @@ Good to know:
 | number (red)   | Recording; the number is the lines captured so far.   |
 | number (grey)  | Lines captured so far (reminder switched off).        |
 
-## Tuning the log selector (optional)
+## If RiftAtlas changes its page
 
-Out of the box the extension watches the whole page and keeps anything that looks like a log
-line (text starting with a clock time). That needs no setup, but it can also pick up other
-timestamped text such as chat messages. To capture the log panel only:
+The extension reads RiftAtlas's own log rows, so there is nothing to set up. If a RiftAtlas
+update ever changes how the log is built, two things protect you:
 
-1. Open a match, right-click a log line and choose **Inspect**.
-2. In DevTools, move up the element tree until the highlight covers the whole log panel —
-   all the lines and nothing else.
-3. Right-click that element → **Copy** → **Copy selector**.
-4. Open `content.js` in a text editor and paste it into `CONFIG` at the top of the file:
+- **Automatic fallback.** When the row selector matches nothing, the extension switches to
+  auto-detect: it keeps anything on the page that looks like a timestamped line. You still get
+  your log, though it may include other timestamped text such as chat, and re-drawn lines can
+  appear twice.
+- **One setting to fix it properly.** `CONFIG` at the top of `content.js` holds `rowSelector`,
+  the CSS selector for a single log row:
 
-   ```js
-   logContainerSelector: '#game-log',
-   ```
+  ```js
+  rowSelector: '[data-match-log-group] li',
+  ```
 
-5. Click the reload arrow on `chrome://extensions` and refresh the RiftAtlas tab.
+  To update it: open a match, right-click a log line → **Inspect**, find the element that wraps
+  exactly one line (its time, text and `×2` counter), and write a selector that matches every
+  such row. Save the file, click the reload arrow on `chrome://extensions`, and refresh the
+  RiftAtlas tab.
 
-If the selector ever stops matching (a typo, or RiftAtlas changes its page), capture falls back
-to the whole page automatically, so you never silently lose lines. The same `CONFIG` block also
-holds `linePattern`, `maxLineLength` and `saveDebounceMs`, each with a comment.
+The same `CONFIG` block also holds `logContainerSelector` (limits auto-detect to one part of
+the page), `linePattern`, `maxLineLength` and `saveDebounceMs`, each with a comment.
 
 ## Honest limitations
 
-- **It only sees what reaches your screen.** Lines from before you opened the tab, lines that
-  were never sent to your browser, and lines that never render because the log panel is
-  closed cannot be captured.
-- **Duplicates are kept on purpose.** If RiftAtlas redraws its whole log, the redrawn lines are
-  captured again. The extension never guesses which identical lines are "the same", because
-  two players really can do the same thing in the same minute.
-- **Auto-detect can over-capture** other timestamped text (see the selector section above).
+- **It only sees what RiftAtlas draws.** Lines from before you opened the tab, or lines
+  RiftAtlas has already dropped from its own log, cannot be recovered.
+- **A refresh starts a new session** with only the newest lines drawn; scroll the in-game log
+  to load the older ones (see above).
+- **Repeat counters show the highest value seen.** If a rewind undoes one of three identical
+  draws, the export still says `×3`, followed by the rewind line.
 - **Recording cannot start by itself** — a Chrome rule, not a choice.
 - RiftAtlas only. No TCGA, no Firefox, no cloud sync.
 
@@ -166,11 +168,11 @@ Permissions, and why each is needed:
 
 | Problem                                   | Fix                                                                 |
 | ----------------------------------------- | ------------------------------------------------------------------- |
-| Badge stays empty during a match           | Refresh the RiftAtlas tab (needed once after installing or updating), and make sure the log panel is open. |
+| Badge stays empty during a match           | Refresh the RiftAtlas tab (needed once after installing or updating). If it is still empty, RiftAtlas may have changed its page — see "If RiftAtlas changes its page". |
 | "Start recording" is greyed out            | Click the icon while the RiftAtlas tab is the active tab.            |
 | The shortcut does nothing                  | Set it at `chrome://extensions/shortcuts`; another extension may already use Alt+Shift+R. |
 | "Manifest file is missing" on Load unpacked | You picked the outer folder. Choose the one that directly contains `manifest.json`. |
-| Chat lines show up in my export            | Set `logContainerSelector` (see above).                              |
+| Old lines are missing after a refresh       | Scroll the in-game log down to its oldest line once.                 |
 
 ## Development
 
@@ -178,7 +180,7 @@ No build step and no dependencies; the repository root is the extension.
 
 ```
 manifest.json    MV3 manifest
-content.js       capture engine: CONFIG, sweep/observe, amend & recycle logic, debounced save
+content.js       capture engine: CONFIG, log-row merge, auto-detect fallback, debounced save
 background.js    service worker: badge + REC? nag, recording control
 offscreen.html   hosts the recorder
 offscreen.js     tab stream + audio passthrough + MediaRecorder → .webm

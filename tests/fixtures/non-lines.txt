@@ -17,4 +17,3 @@ You: 22:38 nice play
 3 cards in hand
 122:38 Not a clock time
 22:3 Too few minute digits
-22:38Moved with no space after the time
