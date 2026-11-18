@@ -76,6 +76,10 @@
     recButton: $('rec-button'),
     recError: $('rec-error'),
     nagToggle: $('nag-toggle'),
+    version: $('version'),
+    status: $('status'),
+    statusText: $('status-text'),
+    copyDetails: $('copy-details'),
   };
 
   let sessions = [];
@@ -237,6 +241,53 @@
     await loadRecording();
   });
 
+  // --- Is capture working on this tab? -----------------------------------------
+
+  const onAtlasTab = () => !!(activeTab && activeTab.url && activeTab.url.startsWith(ATLAS_ORIGIN));
+
+  function askTab(detailed) {
+    return chrome.tabs.sendMessage(activeTab.id, { type: 'status', detailed }).catch(() => null);
+  }
+
+  async function loadStatus() {
+    if (!onAtlasTab()) return;
+    const st = await askTab(false);
+    els.status.hidden = false;
+    els.copyDetails.hidden = false;
+    let ok = false;
+    let text;
+    if (!st || st.error) {
+      text = 'Not connected to this tab. Refresh the RiftAtlas tab, then open this again.';
+      els.copyDetails.hidden = !st;
+    } else if (st.version !== chrome.runtime.getManifest().version) {
+      text = `This tab is still running v${st.version}. Refresh the RiftAtlas tab.`;
+    } else if (st.mode === 'rows') {
+      ok = true;
+      text = `Watching this tab · ${st.rowsOnScreen} log lines on screen · ${st.saved} saved`;
+    } else if (st.saved) {
+      ok = true;
+      text = `Watching this tab (auto-detect) · ${st.saved} saved`;
+    } else {
+      ok = true;
+      text = 'Watching this tab · no game log on this page yet';
+    }
+    els.status.className = 'status ' + (ok ? 'ok' : 'warn');
+    els.statusText.textContent = text;
+  }
+
+  els.copyDetails.addEventListener('click', async () => {
+    const details = (await askTab(true)) || { error: 'no answer from the tab' };
+    details.popupVersion = chrome.runtime.getManifest().version;
+    details.browser = navigator.userAgent;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(details, null, 2));
+      els.copyDetails.textContent = 'Copied';
+    } catch (_) {
+      els.copyDetails.textContent = 'Copy failed';
+    }
+    setTimeout(() => (els.copyDetails.textContent = 'Copy details'), 1500);
+  });
+
   // --- Settings ----------------------------------------------------------------
 
   async function loadSettings() {
@@ -265,8 +316,11 @@
     try {
       [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     } catch (_) {}
+    els.version.textContent = 'v' + chrome.runtime.getManifest().version;
     loadSettings();
     loadRecording();
     loadSessions();
+    loadStatus();
+    setInterval(loadStatus, 2000);
   })();
 })();

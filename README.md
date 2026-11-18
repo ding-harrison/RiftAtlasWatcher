@@ -166,6 +166,12 @@ Permissions, and why each is needed:
 
 ## Troubleshooting
 
+Open the popup while the RiftAtlas tab is in front. The line under **Captured logs** tells you
+what the extension sees on that tab, and the version next to the title tells you which build
+Chrome is actually running. **Copy details** puts troubleshooting information on your clipboard
+(extension version, what was found on the page, a sample of the log's markup — nothing leaves
+your computer unless you paste it somewhere).
+
 | Problem                                   | Fix                                                                 |
 | ----------------------------------------- | ------------------------------------------------------------------- |
 | Badge stays empty during a match           | Refresh the RiftAtlas tab (needed once after installing or updating). If it is still empty, RiftAtlas may have changed its page — see "If RiftAtlas changes its page". |

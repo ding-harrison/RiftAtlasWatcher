@@ -546,6 +546,65 @@
     } catch (_) {}
   }
 
+  // --- Status for the popup ---------------------------------------------------
+
+  function clip(html, max) {
+    return html.length > max ? html.slice(0, max) + '…' : html;
+  }
+
+  /** Markup around timestamp-looking text on the page, for troubleshooting. */
+  function timeSamples() {
+    const samples = [];
+    const used = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let seen = 0;
+    for (let node = walker.nextNode(); node && seen < 30000 && samples.length < 4; node = walker.nextNode(), seen++) {
+      const data = node.data.trim();
+      if (!data || !TIME_START.test(data) || data.length > 300) continue;
+      let el = node.parentElement;
+      for (let up = 0; up < 3 && el && el.parentElement && el.parentElement !== document.body; up++) {
+        el = el.parentElement;
+      }
+      if (!el || SKIP_TAGS.has(el.tagName) || used.some((u) => u.contains(el))) continue;
+      used.push(el);
+      samples.push(clip(el.outerHTML, 1500));
+    }
+    return samples;
+  }
+
+  function status(detailed) {
+    const rows = findRows();
+    const info = {
+      version: chrome.runtime.getManifest().version,
+      mode: rowsSeen || rows.length ? 'rows' : 'auto-detect',
+      rowsOnScreen: rows.length,
+      saved: entries.length,
+      startedAt,
+    };
+    if (detailed) {
+      info.path = location.pathname;
+      info.topFrame = window.top === window;
+      info.frames = document.querySelectorAll('iframe').length;
+      info.logGroups = document.querySelectorAll('[data-match-log-group]').length;
+      info.lastSaved = entries.slice(-3).map((e) => e.text);
+      info.rowSample = rows.length ? clip(rows[0].outerHTML, 2500) : null;
+      info.timeSamples = rows.length ? [] : timeSamples();
+    }
+    return info;
+  }
+
+  try {
+    chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+      if (!msg || msg.type !== 'status' || dead) return;
+      try {
+        if (rowsSeen || findRows().length) reconcile();
+        sendResponse(status(!!msg.detailed));
+      } catch (err) {
+        sendResponse({ error: String((err && err.message) || err) });
+      }
+    });
+  } catch (_) {}
+
   // --- Start ------------------------------------------------------------------
 
   function start() {

@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-11-18
+
+### Added
+
+- The popup shows its version and a live status line for the current tab
+  ("Watching this tab · 16 log lines on screen · 42 saved", or a warning when the
+  tab needs a refresh), so it is obvious whether capture is running.
+- "Copy details" button that copies troubleshooting information (version, what
+  was found on the page, a sample of the log markup) to the clipboard.
+
 ## [1.0.1] - 2026-11-18
 
 ### Fixed
@@ -50,5 +60,6 @@ First repository release, replacing the v0.1 prototype.
 - Unit tests for line detection and export formats, and a GitHub Actions
   workflow that publishes a ready-to-load zip on every version tag.
 
+[1.0.2]: https://github.com/ding-harrison/RiftAtlasWatcher/releases/tag/v1.0.2
 [1.0.1]: https://github.com/ding-harrison/RiftAtlasWatcher/releases/tag/v1.0.1
 [1.0.0]: https://github.com/ding-harrison/RiftAtlasWatcher/releases/tag/v1.0.0
