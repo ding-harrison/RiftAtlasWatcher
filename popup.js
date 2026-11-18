@@ -38,6 +38,11 @@
           capturedAt: new Date(e.capturedAt).toISOString(),
           text: e.text,
         })),
+        // Your hand each time it changed. Match `capturedAt` against the entries.
+        hands: (session.hands || []).map((h) => ({
+          capturedAt: new Date(h.capturedAt).toISOString(),
+          cards: h.cards,
+        })),
       },
       null,
       2
@@ -140,12 +145,13 @@
     els.sessions.replaceChildren(
       ...sessions.map((s) => {
         const n = s.entries.length;
+        const h = (s.hands || []).length;
         const head = div('session-head');
         head.append(
           div('', formatTime(s.startedAt)),
           div('session-count', `${n.toLocaleString()} ${n === 1 ? 'entry' : 'entries'}`)
         );
-        const url = div('session-url', urlPath(s.url));
+        const url = div('session-url', urlPath(s.url) + (h ? ` · ${h.toLocaleString()} hand ${h === 1 ? 'snapshot' : 'snapshots'}` : ''));
         url.title = s.url || '';
         const actions = div('session-actions');
         actions.append(
@@ -264,6 +270,7 @@
     } else if (st.mode === 'rows') {
       ok = true;
       text = `Watching this tab · ${st.rowsOnScreen} log lines on screen · ${st.saved} saved`;
+      if (st.hand) text += ` · ${st.hand.length} in hand`;
     } else if (st.saved) {
       ok = true;
       text = `Watching this tab (auto-detect) · ${st.saved} saved`;

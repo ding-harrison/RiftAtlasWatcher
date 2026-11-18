@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-11-18
+
+### Added
+
+- **Hand capture.** The cards in your own hand are saved each time the hand
+  changes, read from RiftAtlas's hand area (`handSelector`, `handCardSelector`
+  in `CONFIG`). Snapshots are included in the `.json` export under `hands`, the
+  popup shows how many a session holds, and the status line shows the current
+  hand size. The `.txt` export is unchanged.
+
 ## [1.0.2] - 2026-11-18
 
 ### Added
@@ -60,6 +70,7 @@ First repository release, replacing the v0.1 prototype.
 - Unit tests for line detection and export formats, and a GitHub Actions
   workflow that publishes a ready-to-load zip on every version tag.
 
+[1.1.0]: https://github.com/ding-harrison/RiftAtlasWatcher/releases/tag/v1.1.0
 [1.0.2]: https://github.com/ding-harrison/RiftAtlasWatcher/releases/tag/v1.0.2
 [1.0.1]: https://github.com/ding-harrison/RiftAtlasWatcher/releases/tag/v1.0.1
 [1.0.0]: https://github.com/ding-harrison/RiftAtlasWatcher/releases/tag/v1.0.0

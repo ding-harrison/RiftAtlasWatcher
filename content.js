@@ -45,6 +45,14 @@
     newestFirst: true,
 
     /*
+     * Your hand. `handSelector` matches the area that holds your own hand and
+     * `handCardSelector` one card inside it; the card's name is read from its
+     * picture's alt text. Set handSelector to '' to turn hand capture off.
+     */
+    handSelector: '[data-drop-zone-root="hand"][data-zone-owner="self"]',
+    handCardSelector: '[data-drop-zone="hand"][data-card-id]',
+
+    /*
      * Auto-detect only: CSS selector of the element containing the log.
      * Leave empty ('') to watch the whole page. Use it to stop auto-detect
      * from picking up other timestamped text such as chat. If the selector
@@ -201,9 +209,17 @@
     return changed;
   }
 
+  /** Same cards, in any order? Re-arranging your hand is not a change worth saving. */
+  function sameCards(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    const x = [...a].sort();
+    const y = [...b].sort();
+    return x.every((name, i) => name === y[i]);
+  }
+
   // Node (unit tests): export the helpers and stop here.
   if (typeof module === 'object' && module.exports) {
-    module.exports = { CONFIG, normalize, isLineText, withTimeSpace, splitLine, relation, mergeWindow };
+    module.exports = { CONFIG, normalize, isLineText, withTimeSpace, splitLine, relation, mergeWindow, sameCards };
     return;
   }
 
@@ -217,6 +233,9 @@
   const RETRY_SAVE_MS = 5000;
   const CONTAINER_CHECK_MS = 2000;
   const RECONCILE_MIN_GAP_MS = 40;
+  const HAND_SETTLE_MS = 500; // wait for drags and animations to finish
+  const HAND_MAX_WAIT_MS = 3000;
+  const UNKNOWN_CARD = '(unknown card)';
 
   const startedAt = Date.now();
   const sessionId =
@@ -228,6 +247,10 @@
 
   /** @type {{capturedAt:number, text:string}[]} */
   const entries = [];
+  /** Your hand each time it changed: [{ capturedAt, cards: ["Stupefy", …] }] */
+  const hands = [];
+  let handTimer = null;
+  let handFirstAt = 0;
 
   let dead = false; // extension reloaded/removed: stop quietly
   let dirty = false;
@@ -266,6 +289,7 @@
     clearTimeout(saveTimer);
     clearTimeout(badgeTimer);
     clearTimeout(reconcileTimer);
+    clearTimeout(handTimer);
     clearInterval(containerTimer);
   }
 
@@ -334,6 +358,68 @@
     const wait = lastReconcileAt + RECONCILE_MIN_GAP_MS - Date.now();
     if (wait <= 0) reconcile();
     else reconcileTimer = setTimeout(reconcile, wait);
+  }
+
+  // --- Your hand --------------------------------------------------------------
+
+  function findHand() {
+    if (!CONFIG.handSelector) return null;
+    try {
+      return document.querySelector(CONFIG.handSelector);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function cardName(el) {
+    for (const img of el.querySelectorAll('img[alt]')) {
+      const alt = normalize(img.alt);
+      if (alt) return alt;
+    }
+    const fallback = el.querySelector('[data-card-art-missing]');
+    return (fallback && normalize(fallback.textContent)) || '';
+  }
+
+  /** Card names in your hand, left to right, or null if no hand is on the page. */
+  function readHand() {
+    const hand = findHand();
+    if (!hand) return null;
+    const cards = new Map(); // card id → { name, index, order }
+    let order = 0;
+    for (const el of hand.querySelectorAll(CONFIG.handCardSelector)) {
+      const id = el.getAttribute('data-card-id') || 'card-' + order;
+      const card = cards.get(id) || { name: '', index: NaN, order: order++ };
+      card.name = card.name || cardName(el);
+      const index = parseInt(el.getAttribute('data-drop-index'), 10);
+      if (!Number.isNaN(index)) card.index = index;
+      cards.set(id, card);
+    }
+    return [...cards.values()]
+      .sort((a, b) => (Number.isNaN(a.index) || Number.isNaN(b.index) ? a.order - b.order : a.index - b.index))
+      .map((c) => c.name || UNKNOWN_CARD);
+  }
+
+  function snapshotHand() {
+    handTimer = null;
+    if (!alive()) return;
+    try {
+      const cards = readHand();
+      if (!cards) return;
+      const last = hands[hands.length - 1];
+      if (last ? sameCards(last.cards, cards) : cards.length === 0) return;
+      hands.push({ capturedAt: Date.now(), cards });
+      markDirty();
+    } catch (_) {}
+  }
+
+  function scheduleHand() {
+    if (!CONFIG.handSelector) return;
+    const now = Date.now();
+    if (!handTimer) handFirstAt = now;
+    // Wait for the hand to settle, but never longer than a few seconds on a busy page.
+    const wait = Math.max(0, Math.min(HAND_SETTLE_MS, handFirstAt + HAND_MAX_WAIT_MS - now));
+    clearTimeout(handTimer);
+    handTimer = setTimeout(snapshotHand, wait);
   }
 
   // --- Auto-detect mode -------------------------------------------------------
@@ -448,6 +534,7 @@
 
   function onMutations(mutations) {
     if (!alive()) return;
+    scheduleHand();
     try {
       if (rowsSeen || findRows().length) {
         rowsSeen = true;
@@ -512,9 +599,9 @@
   function save() {
     clearTimeout(saveTimer);
     saveTimer = null;
-    if (!dirty || entries.length === 0 || !alive()) return;
+    if (!dirty || (entries.length === 0 && hands.length === 0) || !alive()) return;
     dirty = false;
-    const record = { id: sessionId, startedAt, url: initialUrl, entries };
+    const record = { id: sessionId, startedAt, url: initialUrl, entries, hands };
     const failed = () => {
       // Quota or transient failure: stay silent, try again shortly.
       if (!dirty) {
@@ -535,6 +622,10 @@
     try {
       if (rowsSeen && alive()) reconcile();
     } catch (_) {}
+    if (handTimer) {
+      clearTimeout(handTimer);
+      snapshotHand();
+    }
     save();
   }
 
@@ -579,6 +670,8 @@
       mode: rowsSeen || rows.length ? 'rows' : 'auto-detect',
       rowsOnScreen: rows.length,
       saved: entries.length,
+      hand: readHand(),
+      handsSaved: hands.length,
       startedAt,
     };
     if (detailed) {
@@ -589,6 +682,9 @@
       info.lastSaved = entries.slice(-3).map((e) => e.text);
       info.rowSample = rows.length ? clip(rows[0].outerHTML, 2500) : null;
       info.timeSamples = rows.length ? [] : timeSamples();
+      const hand = findHand();
+      info.handZones = document.querySelectorAll('[data-drop-zone-root="hand"]').length;
+      info.handSample = hand ? clip(hand.outerHTML, 3000) : null;
     }
     return info;
   }
@@ -610,6 +706,7 @@
   function start() {
     reportCount(); // fresh page load: reset this tab's badge
     attach();
+    scheduleHand();
     if (CONFIG.logContainerSelector) {
       // The SPA may mount the container later, or replace it; keep following it.
       containerTimer = setInterval(attach, CONTAINER_CHECK_MS);

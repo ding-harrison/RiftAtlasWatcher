@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { CONFIG, normalize, isLineText, withTimeSpace, splitLine, relation, mergeWindow } = require('../content.js');
+const { CONFIG, normalize, isLineText, withTimeSpace, splitLine, relation, mergeWindow, sameCards } = require('../content.js');
 const { toTxt, toJson, allToTxt, formatTime } = require('../popup.js');
 
 function fixture(name) {
@@ -159,7 +159,8 @@ test('.txt export is one line per entry, verbatim, header-less', () => {
 
 test('.json export parses and uses ISO-8601 timestamps', () => {
   const parsed = JSON.parse(toJson(session));
-  assert.deepEqual(Object.keys(parsed), ['id', 'startedAt', 'url', 'entries']);
+  assert.deepEqual(Object.keys(parsed), ['id', 'startedAt', 'url', 'entries', 'hands']);
+  assert.deepEqual(parsed.hands, []);
   assert.equal(parsed.entries.length, 2);
   for (const e of parsed.entries) {
     assert.equal(new Date(e.capturedAt).toISOString(), e.capturedAt);
@@ -178,4 +179,19 @@ test('"export all" is oldest-first with session separators', () => {
       `\n==== Session started ${formatTime(later.startedAt)} ====\n` +
       '22:50 Drew 1 card.\n'
   );
+});
+
+test('.json export carries hand snapshots with ISO timestamps', () => {
+  const withHands = { ...session, hands: [{ capturedAt: 1763358380120, cards: ['Stupefy', 'Gust'] }] };
+  assert.deepEqual(JSON.parse(toJson(withHands)).hands, [
+    { capturedAt: '2025-11-17T05:46:20.120Z', cards: ['Stupefy', 'Gust'] },
+  ]);
+});
+
+test('re-arranging a hand is not a change; adding or removing a card is', () => {
+  assert.equal(sameCards(['Stupefy', 'Gust'], ['Gust', 'Stupefy']), true);
+  assert.equal(sameCards(['Stupefy', 'Stupefy'], ['Stupefy']), false);
+  assert.equal(sameCards(['Stupefy', 'Gust'], ['Stupefy', 'Moonfall']), false);
+  assert.equal(sameCards([], []), true);
+  assert.equal(sameCards(undefined, []), false);
 });

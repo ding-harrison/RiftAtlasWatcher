@@ -72,7 +72,7 @@ room stays together — just like RiftAtlas's own log.
 | Button                | What you get                                                                 |
 | --------------------- | ---------------------------------------------------------------------------- |
 | **Export .txt**       | One line per row, exactly as shown in-game: `22:46 Played Scuttle Crab from hand to base.` |
-| **Export .json**      | The same lines plus the real time each one was captured (`capturedAt`, ISO-8601). |
+| **Export .json**      | The same lines plus the real time each one was captured (`capturedAt`, ISO-8601), and your hand snapshots. |
 | **Export all (.txt)** | Every session, oldest first, separated by `==== Session started <time> ====`. |
 | **Delete / Delete all** | Removes saved sessions. "Delete all" asks first.                           |
 
@@ -83,6 +83,26 @@ your export, followed by the rewind line.
 **Joined late or refreshed mid-match?** RiftAtlas only draws its newest ~16 log lines until
 you scroll. Scroll the in-game log down to its oldest line once and the extension picks up
 everything RiftAtlas still has.
+
+### Your hand
+
+While you play, the extension also notes which cards are in **your own hand** each time it
+changes (drawing, playing, discarding — re-arranging cards does not count). The popup shows
+"5 in hand" on its status line while a game is open, and each session lists how many hand
+snapshots it holds.
+
+Hand snapshots are in the **`.json` export** only, under `hands`:
+
+```json
+"hands": [
+  { "capturedAt": "2026-11-18T05:46:20.120Z", "cards": ["Stupefy", "Gust", "Lucian, Merciless"] }
+]
+```
+
+Each has the same kind of `capturedAt` timestamp as the log entries, so you can line up "what
+was I holding" against any line of the log. The opponent's hand is never captured — their
+cards are not sent to your browser. To turn hand capture off, set `handSelector: ''` in
+`CONFIG` at the top of `content.js`.
 
 ### Recording a match
 
@@ -135,6 +155,8 @@ update ever changes how the log is built, two things protect you:
   such row. Save the file, click the reload arrow on `chrome://extensions`, and refresh the
   RiftAtlas tab.
 
+Hand capture works the same way, through `handSelector` and `handCardSelector`.
+
 The same `CONFIG` block also holds `logContainerSelector` (limits auto-detect to one part of
 the page), `linePattern`, `maxLineLength` and `saveDebounceMs`, each with a comment.
 
@@ -151,7 +173,7 @@ the page), `linePattern`, `maxLineLength` and `saveDebounceMs`, each with a comm
 
 ## Privacy
 
-Logs are stored in the browser's local extension storage and videos are written to your
+Logs and hand snapshots are stored in the browser's local extension storage and videos are written to your
 Downloads folder. The extension makes no network requests of any kind and can only read pages
 on `https://play.riftatlas.com/`. It never clicks, types or changes anything in the game.
 
