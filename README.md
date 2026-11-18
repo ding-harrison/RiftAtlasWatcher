@@ -17,17 +17,18 @@ appears on screen, so nothing is lost when the game's own log scrolls it away.
 The extension is not on the Chrome Web Store, so Chrome needs to be pointed at a folder once.
 There is nothing to build or install besides the folder itself.
 
-1. **Download** the latest
-   [**riftatlas-log-keeper.zip**](https://github.com/ding-harrison/RiftAtlasWatcher/releases/latest/download/riftatlas-log-keeper.zip).
-   <br><sub>No release yet, or the link 404s? On the repository page click the green
-   **Code** button → **Download ZIP** instead. It works the same way.</sub>
+1. **Download** the extension:
+   [**Download ZIP**](https://github.com/ding-harrison/RiftAtlasWatcher/archive/HEAD.zip).
+   <br><sub>Same thing as the green **Code** button → **Download ZIP** on the repository page.
+   If the repository is private you need to be signed in to GitHub for the link to work.</sub>
 2. **Unzip it** and move the folder somewhere it can stay, such as `Documents`.
    Chrome loads the extension from this folder every time it starts, so don't leave it in
    `Downloads` if you clean that out.
 3. Open **`chrome://extensions`** in Chrome (type it into the address bar).
 4. Turn on **Developer mode** (switch in the top-right corner).
 5. Click **Load unpacked** and choose the folder you unzipped — the one that contains
-   `manifest.json`.
+   `manifest.json` (it is named `RiftAtlasWatcher-…`; if unzipping made a folder inside a
+   folder, pick the inner one).
 6. Click the puzzle-piece icon in Chrome's toolbar and **pin** "RiftAtlas Full Log Keeper"
    so its badge is visible.
 
@@ -193,8 +194,8 @@ node --test tests/unit.test.js
 
 To publish a release, bump `version` in `manifest.json`, add a `CHANGELOG.md` entry, and push a
 matching tag such as `v1.0.1`. The workflow in `.github/workflows/package.yml` runs the tests
-and attaches `riftatlas-log-keeper.zip` to a GitHub Release, which is what the download link at
-the top of this page points to.
+and attaches `riftatlas-log-keeper.zip` to a GitHub Release. The download link at the top of
+this page does not depend on releases: it always serves the current default branch.
 
 ## License
 
